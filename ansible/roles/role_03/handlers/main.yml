@@ -1,0 +1,6 @@
+---
+# handlers file for role_03
+ - name: reiniciar nodo
+   hosts: master
+      reboot:
+    

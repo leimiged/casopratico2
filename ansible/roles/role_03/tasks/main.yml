@@ -1,0 +1,80 @@
+---
+
+  - name: Kubernetes API server  66443
+    firewalld:
+      port: 6443/tcp
+      permanent: yes
+      state: enabled 
+    
+  - name: etcd server client API  2379-2380
+    firewalld:
+       port: 2379-2380/tcp
+       permanent: true
+       state: enabled
+
+  - name: Kubelet API - scheduler - controller-manage  10250-10252
+    firewalld:
+       port: 10250-10252/tcp
+       permanent: true
+       state: enabled   
+
+  - name: Statistics 10255
+    firewalld:
+       port: 10255/tcp
+       permanent: true
+       state: enabled
+
+  - name: Reiniciando el servicio Firewalld 
+    systemd:
+      name: firewalld
+      state: restarted
+
+  - name: Descargando imágenes requeridas por Kubernetes
+    shell: kubeadm config images pull
+    
+  - name: Instalamos el plugin CNI 
+    shell: "kubeadm init --apiserver-advertise-address {{ ansible_host }} --pod-network-cidr {{ pod_network }}"
+    register: kubeadd_cmd
+
+  - name: Extrayendo el token del Master en formato JSON
+    shell: kubeadm token list -o json
+    register: token_out
+  
+  - name: Creamos el directorio .kube
+    file:
+      path: /root/.kube
+      state: directory
+
+  - name: Autorizando al usuario root acceder al cluster
+    copy:
+      src: /etc/kubernetes/admin.conf
+      dest: /root/.kube/config
+      remote_src: yes
+      owner: root
+      group: root
+
+  - name: Permitir el tráfico en el cortafuegos del master y workers 8285
+    firewalld:
+       port: 8285/udp
+       permanent: true
+       state: enabled   
+
+  - name: Permitir el tráfico en el cortafuegos del master y workers 8472
+    firewalld:
+       port: 8472/udp
+       permanent: true
+       state: enabled     
+
+  - name: Instalacion Flannel Azure
+    shell: kubectl apply -f https://docs.projectcalico.org/manifests/canal.yaml
+    register: kubectl_sdn
+    when: sdn == 'flannel'
+  
+  - name: Desplegando Flannel
+    shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.0.4/deploy/static/provider/baremetal/deploy.yaml
+    register: kubectl_nginxic
+  
+  - name: Reniniciando nodo Master
+    reboot:
+    notify:
+     - reiniciar

@@ -1,0 +1,48 @@
+---
+
+- name: Configoracion de kubernetes nodo worker
+  hosts: worker
+  become: yes
+  tasks:
+
+
+  - name: Habilitar el tráfico entrante en firewall 8285
+    firewalld:
+      port: 8285/udp
+      permanent: true
+      zone: public
+      state: enabled
+
+
+  - name: Habilitar el tráfico entrante en firewall 8472
+    firewalld:
+      port: 8472/udp
+      permanent: true
+      zone: public
+      state: enabled
+
+  - name: Habilitar el tráfico entrante en firewall 10250
+    firewalld:
+      port: 10250/tcp
+      permanent: true
+      zone: public
+      state: enabled
+
+  - name: Habilitar el tráfico entrante en firewall 3000-32767
+    firewalld:
+       port: 3000-32767/tcp
+       permanent: true
+       zone: public
+       state: enabled
+
+  - name: Reiniciando el servicio Firewalld 
+    systemd:
+      name: firewalld
+      state: restarted
+
+# He entendido que tendriamos que coger el token que nos sale para añadir como una variable
+# y utilizarla abajo, pero no lo he entendido como hacer eso.
+
+  - name: Añadir el worker al cluster de Kubernetes
+    shell: "kubeadm join 192.168.1.110:6443 --token  {{ }} --discovery-token-ca-cert-hash sha256:{{ cert_hash }}"
+    register: kubeadm_join

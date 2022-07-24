@@ -1,0 +1,20 @@
+---
+
+- name: Configuraciones en el nodo master
+  hosts: 'master'
+  become: true
+ 
+  pre_tasks: 
+     - debug:
+         msg: 'Configurando nodo master'
+
+
+  roles:
+     - role_03
+
+
+  post_tasks:
+      - debug:
+          msg: 'Nodo master de kubernetes configurado' 
+  
+  

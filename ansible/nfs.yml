@@ -1,0 +1,21 @@
+---
+# creando y configurando servidor NFS
+
+- name: Etapa servidor NFS
+  hosts: 'nfslab'
+  become: true
+    
+  pre_tasks: 
+     - debug:
+         msg: 'Configurando servidor NFS'
+
+
+  roles:
+     - role_02
+
+
+  post_tasks:
+      - debug:
+          msg: ' Servirdor NFS configurado'   
+      
+    
